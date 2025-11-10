@@ -205,5 +205,10 @@ Consider, for example, concepts of fariness, inequality, social structures, marg
 
 
 ```
-Your thoughts...
+The article “When Databases Get to Define Family” by Qadri (2021) shows how Pakistan’s national ID system, run by NADRA, quietly builds social norms into its design. The database expects every citizen to have two married parents and children born within marriage. That might sound like just a technical detail, but it has real consequences. People like unmarried mothers, orphans, or members of the khawaja sira (third-gender) community struggle to get recognized by the system because their lives don’t fit the database’s definition of “family.”
+What stands out is how this proves that technology is never neutral. Every database or algorithm carries the assumptions and biases of the people who built it. In NADRA’s case, the system reflects ideas of patriarchy and traditional family roles. These aren’t just coding choices; they’re moral and political decisions baked into the technology. When a system only accepts certain family structures, it erases everyone who lives differently.
+You can see echoes of this in the systems we use every day. Many online forms still make you choose “male” or “female” with no other options. Health or fitness apps often assume a specific lifestyle, body type, or income level, leaving out anyone who doesn’t match that picture. Even credit scores can reinforce inequality; people from lower-income backgrounds get labeled “high risk” simply because the system was built around the habits of wealthier people.
+To make data systems fair, designers need to ask more than “Is this accurate?” They should ask “Who gets left out?” A rigid database design might work technically, but it can still be unfair socially. Building fairer systems means including more voices, not just programmers, but also sociologists, ethicists, and the people whose lives will be affected by the data.
+The NADRA example shows how small technical choices, like requiring a parent ID or limiting gender to two options, can shape someone’s access to identity, rights, and opportunities. It’s worth remembering that every table and column that data professionals define reflects a way of seeing the world. If we want databases to serve everyone, we need to be flexible enough to capture real human diversity.
+
 ```
