@@ -54,7 +54,12 @@ The store wants to keep customer addresses. Propose two architectures for the CU
 **HINT:** search type 1 vs type 2 slowly changing dimensions. 
 
 ```
-Your answer...
+
+The added figure (ERD_3) shows two alternative ways to manage customer address information depending on whether the store wants to retain historical changes or simply keep the most current record.
+In the first approach (left side of the figure), the system stores a single address per customer. Whenever the customer moves, the existing row is updated with the new details, effectively replacing the previous information. This is known as a Type 1 Slowly Changing Dimension (SCD) because it overwrites data rather than preserving its history. It’s simple and efficient for daily operations such as shipping or billing, where only the latest address matters. The drawback is that any previous addresses are permanently lost.
+In the second approach (right side of the figure), the design introduces versioning. Each time a customer changes their address, the older version is marked as inactive, and a new row is created for the new address. Dates or status flags are used to identify which record is currently valid. This is referred to as a Type 2 SCD, and it retains a full history of where each customer has lived over time. It supports more complex reporting—like analyzing regional sales trends or auditing changes, but requires slightly more storage and maintenance.
+Both designs are valid, and the choice depends on business needs. If the bookstore only cares about where to deliver books now, Type 1 is sufficient. If it needs to track how customer locations change over time, Type 2 provides the necessary historical traceability.
+
 ```
 
 ***
@@ -183,5 +188,11 @@ Consider, for example, concepts of labour, bias, LLM proliferation, moderating c
 
 
 ```
-Your thoughts...
+
+Reading “Neural Nets Are Just People All the Way Down” felt less like going through a technical article and more like having a long, thought-provoking conversation with someone who really gets both technology and human nature. The author doesn’t just talk about neural networks as lines of code or mathematical systems, but make this bigger point that neural networks are reflections of us. They learn from examples, make mistakes, and eventually form their own understanding of things, just like humans do. That comparison immediately attracted my attention, because it moves away from the usual robotic image of AI and instead makes it feel strangely familiar.
+What I liked most about the article is how it mixes science with psychology and philosophy without ever feeling like it’s trying too hard. It doesn’t throw around complicated terms or drown the reader in data; instead, it paints this clear picture of how these models are built from human input and shaped by human choices. The line about neural nets being “people all the way down” hit me because it made me realize how much human bias, creativity, and even confusion are incorporated in these systems. AI doesn’t grow up in a vacuum, it grows up on our data, our words, and our mistakes. So, every neural net is like a digital reflection of collective human behavior.
+The article also made me rethink the whole “AI is taking over” narrative that’s everywhere right now. It’s not that machines are replacing us, it’s that they’re mirroring us. When an AI writes an essay, paints a picture, or generates an answer, it’s not creating something truly alien; it’s remixing the patterns it learned from us. I found that perspective oddly comforting. It reminds me that the technology we build isn’t separate from humanity, it’s an extension of it. And because of that, how we train and use AI says a lot more about us than about the machines themselves.
+There’s also something a little unsettling about that idea. If neural networks are learning from us, they’re also inheriting our flaws. The biases, assumptions, and blind spots that exist in society don’t magically disappear just because we wrap them in math, they get encoded right into the system. The author doesn’t shy away from that point, and I respect that honesty. It’s a reminder that building AI responsibly means being aware of who we are, not just what we want machines to do.
+By the end, the article left me with a feeling that was equal parts curiosity and humility. It’s wild to think that something as complex as a neural network, built from equations and training data, ends up resembling us more than we might want to admit. It’s a mirror held up to our own minds. And maybe that’s the real message: before we worry about machines becoming “too human”, we should probably spend more time understanding ourselves.
+
 ```
