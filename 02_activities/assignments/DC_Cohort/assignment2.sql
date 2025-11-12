@@ -12,14 +12,16 @@ product_name || ', ' || product_size|| ' (' || product_qty_type || ')'
 FROM product
 
 But wait! The product table has some bad data (a few NULL values). 
-Find the NULLs and then using COALESCE, replace the NULL with a 
+Find thecode NULLs and then using COALESCE, replace the NULL with a 
 blank for the first problem, and 'unit' for the second problem. 
 
 HINT: keep the syntax the same, but edited the correct components with the string. 
 The `||` values concatenate the columns into strings. 
 Edit the appropriate columns -- you're making two edits -- and the NULL rows will be fixed. 
 All the other rows will remain the same.) */
-
+SELECT 
+  product_name || ', ' || COALESCE(product_size,'') || ' (' || COALESCE(product_qty_type,'unit') || ')' AS product_label
+FROM product;
 
 
 --Windowed Functions
@@ -31,18 +33,60 @@ You can either display all rows in the customer_purchases table, with the counte
 each new market date for each customer, or select only the unique market dates per customer 
 (without purchase details) and number those visits. 
 HINT: One of these approaches uses ROW_NUMBER() and one uses DENSE_RANK(). */
-
+WITH visits AS (
+  SELECT DISTINCT customer_id, market_date
+  FROM customer_purchases
+)
+SELECT 
+  customer_id,
+  market_date,
+  DENSE_RANK() OVER (PARTITION BY customer_id ORDER BY market_date) AS visit_number
+FROM visits
+ORDER BY customer_id, market_date;
 
 
 /* 2. Reverse the numbering of the query from a part so each customer’s most recent visit is labeled 1, 
 then write another query that uses this one as a subquery (or temp table) and filters the results to 
 only the customer’s most recent visit. */
-
+WITH visits AS (
+  SELECT DISTINCT customer_id, market_date
+  FROM customer_purchases
+),
+ranked AS (
+  SELECT
+    customer_id,
+    market_date,
+    DENSE_RANK() OVER (PARTITION BY customer_id ORDER BY market_date DESC) AS visit_rev
+  FROM visits
+)
+SELECT *
+FROM ranked
+WHERE visit_rev = 1
+ORDER BY customer_id;
 
 
 /* 3. Using a COUNT() window function, include a value along with each row of the 
 customer_purchases table that indicates how many different times that customer has purchased that product_id. */
-
+WITH distinct_visits AS (  
+  SELECT DISTINCT customer_id, product_id, market_date
+  FROM customer_purchases
+),
+counts AS (
+  SELECT
+    customer_id,
+    product_id,
+    market_date,
+    COUNT(*) OVER (PARTITION BY customer_id, product_id) AS distinct_purchase_days_for_product
+  FROM distinct_visits
+)
+SELECT
+  cp.*,
+  c.distinct_purchase_days_for_product
+FROM customer_purchases cp
+JOIN counts c
+  ON c.customer_id = cp.customer_id
+ AND c.product_id  = cp.product_id
+ AND c.market_date = cp.market_date;
 
 
 -- String manipulations
@@ -56,10 +100,21 @@ Remove any trailing or leading whitespaces. Don't just use a case statement for 
 | Habanero Peppers - Organic | Organic     |
 
 Hint: you might need to use INSTR(product_name,'-') to find the hyphens. INSTR will help split the column. */
+SELECT
+  product_name,
+  CASE 
+    WHEN INSTR(product_name, '-') > 0
+      THEN TRIM(SUBSTR(product_name, INSTR(product_name,'-') + 1))
+    ELSE NULL
+  END AS description
+FROM product;
 
 
 
 /* 2. Filter the query to show any product_size value that contain a number with REGEXP. */
+SELECT *
+FROM product
+WHERE product_size REGEXP '[0-9]';  
 
 
 
@@ -72,7 +127,30 @@ HINT: There are a possibly a few ways to do this query, but if you're struggling
 "best day" and "worst day"; 
 3) Query the second temp table twice, once for the best day, once for the worst day, 
 with a UNION binding them. */
-
+-- What tables exist?
+WITH sales_by_date AS (
+  SELECT 
+    market_date, 
+    COUNT(*) AS total_sales  
+  FROM customer_purchases
+  GROUP BY market_date
+),
+ranked AS (
+  SELECT
+    market_date,
+    total_sales,
+    RANK() OVER (ORDER BY total_sales DESC) AS r_desc,
+    RANK() OVER (ORDER BY total_sales ASC)  AS r_asc
+  FROM sales_by_date
+)
+SELECT 'best_day' AS label, market_date, total_sales
+FROM ranked
+WHERE r_desc = 1
+UNION
+SELECT 'worst_day' AS label, market_date, total_sales
+FROM ranked
+WHERE r_asc = 1
+ORDER BY label;
 
 
 
@@ -88,6 +166,18 @@ Remember, CROSS JOIN will explode your table rows, so CROSS JOIN should likely b
 Think a bit about the row counts: how many distinct vendors, product names are there (x)?
 How many customers are there (y). 
 Before your final group by you should have the product of those two queries (x*y).  */
+WITH num_customers AS (
+  SELECT COUNT(*) AS c FROM customer
+)
+SELECT
+  v.vendor_name,
+  p.product_name,
+  (5 * nc.c) AS projected_units_per_product
+FROM vendor_inventory vi
+JOIN vendor  v ON v.vendor_id  = vi.vendor_id
+JOIN product p ON p.product_id = vi.product_id
+CROSS JOIN num_customers nc
+ORDER BY v.vendor_name, p.product_name;
 
 
 
@@ -96,11 +186,25 @@ Before your final group by you should have the product of those two queries (x*y
 This table will contain only products where the `product_qty_type = 'unit'`. 
 It should use all of the columns from the product table, as well as a new column for the `CURRENT_TIMESTAMP`.  
 Name the timestamp column `snapshot_timestamp`. */
+DROP TABLE IF EXISTS product_units;
+CREATE TABLE product_units AS
+SELECT
+  p.*,
+  CURRENT_TIMESTAMP AS snapshot_timestamp
+FROM product p
+WHERE p.product_qty_type = 'unit';
 
 
 
 /*2. Using `INSERT`, add a new row to the product_units table (with an updated timestamp). 
 This can be any product you desire (e.g. add another record for Apple Pie). */
+INSERT INTO product_units
+SELECT p.*, CURRENT_TIMESTAMP
+FROM product p
+WHERE p.product_qty_type = 'unit'
+  AND p.product_name = 'Apple Pie'
+LIMIT 1;
+
 
 
 
@@ -108,9 +212,16 @@ This can be any product you desire (e.g. add another record for Apple Pie). */
 /* 1. Delete the older record for the whatever product you added. 
 
 HINT: If you don't specify a WHERE clause, you are going to have a bad time.*/
+DELETE FROM product_units
+WHERE product_name = 'Apple Pie'
+  AND snapshot_timestamp = (
+    SELECT MIN(snapshot_timestamp)
+    FROM product_units
+    WHERE product_name = 'Apple Pie'
+  );
 
 
-
+  
 -- UPDATE
 /* 1.We want to add the current_quantity to the product_units table. 
 First, add a new column, current_quantity to the table using the following syntax.
@@ -127,7 +238,20 @@ Third, SET current_quantity = (...your select statement...), remembering that WH
 Finally, make sure you have a WHERE statement to update the right row, 
 	you'll need to use product_units.product_id to refer to the correct row within the product_units table. 
 When you have all of these components, you can run the update statement. */
+--1) Add the column 
+ALTER TABLE product_units ADD COLUMN current_quantity INT;
 
+-- 2) Initialize to 0
+UPDATE product_units
+SET current_quantity = 0
+WHERE current_quantity IS NULL;
 
-
-
+-- 3) Fill with the most recent vendor_inventory.quantity per product 
+UPDATE product_units AS pu
+SET current_quantity = COALESCE((
+  SELECT vi.quantity
+  FROM vendor_inventory vi
+  WHERE vi.product_id = pu.product_id
+  ORDER BY vi.rowid DESC  
+  LIMIT 1
+), 0);
